@@ -117,10 +117,16 @@ async function* generateText(
 export async function chatWithToolsStream(
   message: string,
   coords?: { lat: number; lon: number },
-  history: HistoryMessage[] = []
+  history: HistoryMessage[] = [],
+  city?: string
 ): Promise<{ toolCalls: ToolCall[]; textStream: AsyncIterable<string> }> {
+  // Sanitize city: оставляем только буквы, цифры, пробелы и дефис — защита от prompt injection
+  const safeCity = city ? city.replace(/[^a-zA-ZА-Яа-яёЁ0-9\s\-]/g, "").trim().slice(0, 80) : undefined;
+
   const locationHint = coords
-    ? `\nКоординаты пользователя: lat=${coords.lat}, lon=${coords.lon}. Если спрашивает про погоду — используй get_weather_by_coords с этими координатами.`
+    ? `\nКоординаты пользователя: lat=${coords.lat.toFixed(4)}, lon=${coords.lon.toFixed(4)}. Если спрашивает про погоду — используй get_weather_by_coords с этими координатами.`
+    : safeCity
+    ? `\nГород пользователя: ${safeCity}. Если спрашивает про погоду — используй get_weather с городом "${safeCity}".`
     : "";
 
   const messages: Groq.Chat.ChatCompletionMessageParam[] = [

@@ -13,11 +13,11 @@ export default function AddToCartButton({ productId }: Props) {
   return (
     <button
       onClick={() => !inCart && addItem(productId)}
-      className={`w-full py-4 text-xs uppercase tracking-widest transition-colors duration-200
+      className={`w-full py-4 text-[10px] uppercase tracking-[0.25em] transition-colors duration-200
         ${
           inCart
-            ? "bg-zinc-100 text-zinc-500 cursor-default"
-            : "bg-zinc-900 text-white hover:bg-zinc-700"
+            ? "bg-white/8 text-white/30 cursor-default border border-white/10"
+            : "bg-white text-zinc-900 hover:bg-white/90"
         }`}
     >
       {inCart ? "Added to Bag" : "Add to Bag"}

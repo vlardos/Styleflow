@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     return new Response(JSON.stringify({ error: parsed.error.issues[0].message }), { status: 400 });
   }
 
-  const { message, coords, history } = parsed.data;
+  const { message, coords, city, history } = parsed.data;
 
   const encoder = new TextEncoder();
 
@@ -19,7 +19,8 @@ export async function POST(req: NextRequest) {
         const { toolCalls, textStream } = await chatWithToolsStream(
           message,
           coords ?? undefined,
-          history ?? []
+          history ?? [],
+          city ?? undefined
         );
 
         const products = toolCalls

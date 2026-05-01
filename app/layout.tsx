@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { Playfair_Display } from "next/font/google";
 import Header from "@/components/layout/Header";
+import BottomNav from "@/components/layout/BottomNav";
 import { TransitionProvider } from "@/lib/transition-context";
 import PageTransition from "@/components/ui/PageTransition";
 import "./globals.css";
@@ -21,7 +22,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <TransitionProvider>
           <PageTransition />
           <Header />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 pb-16 lg:pb-0">{children}</main>
+          <BottomNav />
         </TransitionProvider>
       </body>
     </html>

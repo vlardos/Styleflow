@@ -1,5 +1,6 @@
 "use client";
 import { usePageTransition } from "@/lib/transition-context";
+import { usePathname } from "next/navigation";
 import { ReactNode, MouseEvent } from "react";
 
 type Props = {
@@ -11,11 +12,14 @@ type Props = {
 
 export default function TransitionLink({ href, children, className, onClick }: Props) {
   const { trigger } = usePageTransition();
+  const pathname = usePathname();
 
   function handleClick(e: MouseEvent<HTMLAnchorElement>) {
-    // не перехватываем внешние ссылки и модификаторы
     if (e.metaKey || e.ctrlKey || e.shiftKey) return;
     e.preventDefault();
+    // onClick вызываем в любом случае (например закрыть SearchOverlay)
+    // но навигацию не запускаем если уже на этой странице
+    if (pathname === href) { onClick?.(); return; }
     onClick?.();
     trigger(href);
   }

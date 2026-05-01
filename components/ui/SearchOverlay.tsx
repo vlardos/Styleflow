@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import TransitionLink from "@/components/ui/TransitionLink";
 
 type Product = {
@@ -18,6 +18,8 @@ export default function SearchOverlay({ onClose }: Props) {
   const [query, setQuery] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [visible, setVisible] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch("/api/products")
@@ -28,9 +30,26 @@ export default function SearchOverlay({ onClose }: Props) {
 
   // Fade-in on mount
   useEffect(() => {
-    const frame = requestAnimationFrame(() => setVisible(true));
+    const frame = requestAnimationFrame(() => {
+      setVisible(true);
+      setTimeout(() => inputRef.current?.focus(), 60);
+    });
     return () => cancelAnimationFrame(frame);
   }, []);
+
+  const handleClose = useCallback(() => {
+    setClosing(true);
+    setTimeout(onClose, 320);
+  }, [onClose]);
+
+  // Esc key
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") handleClose();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [handleClose]);
 
   const trimmed = query.trim().toLowerCase();
 
@@ -41,71 +60,93 @@ export default function SearchOverlay({ onClose }: Props) {
             p.name.toLowerCase().includes(trimmed) ||
             p.category.toLowerCase().includes(trimmed)
         )
-        .slice(0, 6)
+        .slice(0, 7)
     : [];
 
-  function handleLinkClick() {
-    onClose();
-  }
+  const opacity = closing ? 0 : visible ? 1 : 0;
+  const translateY = closing ? "-10px" : "0px";
+  const transition = visible
+    ? "opacity 300ms cubic-bezier(0.22, 1, 0.36, 1), transform 300ms cubic-bezier(0.22, 1, 0.36, 1)"
+    : "opacity 200ms ease";
 
   return (
     <div
-      className="fixed inset-0 z-[60] bg-white flex flex-col transition-opacity duration-200"
-      style={{ opacity: visible ? 1 : 0 }}
+      className="fixed inset-0 z-[60] bg-[#0a0a0a] flex flex-col"
+      style={{ opacity, transform: `translateY(${translateY})`, transition }}
     >
       {/* Top bar */}
-      <div className="flex items-center justify-between px-8 py-6 border-b border-zinc-100">
-        <span className="text-xs uppercase tracking-widest text-zinc-400">
+      <div className="flex items-center justify-between px-6 lg:px-12 py-5 border-b border-white/6 shrink-0">
+        <span className="text-[9px] uppercase tracking-[0.4em] text-white/25">
           Search
         </span>
         <button
-          onClick={onClose}
-          className="text-zinc-400 hover:text-zinc-900 transition-colors text-2xl leading-none"
+          onClick={handleClose}
           aria-label="Close search"
+          className="w-8 h-8 flex items-center justify-center text-white/25 hover:text-white/70 transition-colors"
         >
-          &#x2715;
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+            <path d="M2 2l12 12M14 2L2 14"/>
+          </svg>
         </button>
       </div>
 
       {/* Input */}
-      <div className="flex justify-center px-8 pt-12 pb-8">
+      <div className="px-6 lg:px-12 pt-10 pb-6 shrink-0">
         <input
+          ref={inputRef}
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search pieces..."
-          autoFocus
-          className="font-serif text-3xl font-light border-b border-zinc-200 w-full max-w-2xl mx-auto outline-none pb-3 text-zinc-900 placeholder-zinc-300 bg-transparent"
+          className="font-serif w-full max-w-2xl bg-transparent outline-none text-white/80 placeholder:text-white/15 border-b border-white/10 pb-4 focus:border-white/25 transition-colors"
+          style={{ fontSize: "clamp(1.75rem, 5vw, 2.5rem)", fontWeight: 300 }}
         />
       </div>
 
       {/* Results */}
-      <div className="w-full max-w-2xl mx-auto px-8 flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto px-6 lg:px-12 pb-6">
+
         {!trimmed && (
-          <p className="text-xs uppercase tracking-widest text-zinc-400 pt-2">
-            Type to search...
+          <p className="text-[9px] uppercase tracking-[0.35em] text-white/15 pt-2">
+            Type to search the collection
           </p>
         )}
 
         {trimmed && results.length === 0 && (
-          <p className="text-xs uppercase tracking-widest text-zinc-400 pt-2">
+          <p className="text-[9px] uppercase tracking-[0.35em] text-white/15 pt-2">
             No pieces found
           </p>
         )}
 
-        {results.map((product) => (
-          <TransitionLink
-            key={product.id}
-            href={`/catalog/${product.id}`}
-            className="border-b border-zinc-100 py-3 flex justify-between items-center hover:text-zinc-900 text-zinc-700 transition-colors cursor-pointer"
-            onClick={handleLinkClick}
-          >
-            <span className="font-serif text-lg font-light">{product.name}</span>
-            <span className="text-xs uppercase tracking-widest text-zinc-400 ml-4">
-              ${product.price.toFixed(2)}
-            </span>
-          </TransitionLink>
-        ))}
+        {results.length > 0 && (
+          <div className="max-w-2xl border-t border-white/6">
+            {results.map((product, i) => (
+              <TransitionLink
+                key={product.id}
+                href={`/catalog/${product.id}`}
+                onClick={handleClose}
+                className="group border-b border-white/6 py-5 flex items-center justify-between gap-6 hover:pl-1 transition-all duration-300"
+              >
+                <div className="flex items-baseline gap-4 min-w-0">
+                  <span className="text-[9px] text-white/15 tabular-nums shrink-0">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="font-serif text-lg lg:text-xl font-light text-white/60 group-hover:text-white/90 transition-colors truncate">
+                    {product.name}
+                  </span>
+                </div>
+                <div className="flex items-center gap-4 shrink-0">
+                  <span className="text-[9px] uppercase tracking-[0.25em] text-white/20">
+                    {product.category}
+                  </span>
+                  <span className="text-sm text-white/30 tabular-nums font-light">
+                    ${product.price.toFixed(2)}
+                  </span>
+                </div>
+              </TransitionLink>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

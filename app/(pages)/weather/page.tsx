@@ -23,11 +23,11 @@ type WeatherFitResponse = {
   message: string;
 };
 
-const categoryLabel: Record<string, string> = {
-  warm: "Warm",
-  cold: "Cold",
-  rainy: "Rainy",
-  any: "All Weather",
+const categoryMeta: Record<string, { label: string; icon: string }> = {
+  warm: { label: "Warm", icon: "○" },
+  cold: { label: "Cold", icon: "◇" },
+  rainy: { label: "Rainy", icon: "⌇" },
+  any:  { label: "All Weather", icon: "◎" },
 };
 
 export default function WeatherPage() {
@@ -40,10 +40,7 @@ export default function WeatherPage() {
   async function handleSearch() {
     const trimmed = city.trim();
     if (!trimmed || loading) return;
-    if (trimmed.length > 100) {
-      setError("City name is too long");
-      return;
-    }
+    if (trimmed.length > 100) { setError("City name is too long"); return; }
 
     setLoading(true);
     setError(null);
@@ -52,12 +49,7 @@ export default function WeatherPage() {
     try {
       const res = await fetch(`/api/weather-fit?city=${encodeURIComponent(trimmed)}`);
       const data = await res.json();
-
-      if (!res.ok || data.error) {
-        setError(data.error ?? "Could not fetch weather data");
-        return;
-      }
-
+      if (!res.ok || data.error) { setError(data.error ?? "Could not fetch weather data"); return; }
       setResult(data);
     } catch {
       setError("Connection error. Please try again.");
@@ -66,124 +58,153 @@ export default function WeatherPage() {
     }
   }
 
+  const meta = result ? (categoryMeta[result.weather.category] ?? { label: result.weather.category, icon: "◎" }) : null;
+
   return (
-    <div className="max-w-2xl mx-auto px-6 py-10 bg-white">
+    <div className="min-h-screen bg-[#0a0a0a] text-white">
+      <div className="max-w-2xl mx-auto px-6 lg:px-8 py-16">
 
-      {/* Header */}
-      <div className="mb-10">
-        <p className="text-xs uppercase tracking-widest text-zinc-400 mb-1">Dress for the Weather</p>
-        <h1 className="font-serif text-2xl text-zinc-900">Enter your city to get styled.</h1>
-      </div>
+        {/* Page header */}
+        <div className="mb-16">
+          <p className="text-[9px] uppercase tracking-[0.4em] text-white/25 mb-4">StyleFlow</p>
+          <h1 className="font-serif font-light text-5xl lg:text-6xl text-white/90 leading-none">
+            Dress for<br />the weather.
+          </h1>
+          <div className="mt-8 h-px bg-white/8" />
+        </div>
 
-      {/* Search */}
-      <div className="flex items-end gap-4 border-b border-zinc-200 pb-4 mb-10">
-        <input
-          className="flex-1 border-b border-zinc-300 bg-transparent text-sm py-3 outline-none placeholder:text-zinc-400 text-zinc-900"
-          maxLength={100}
-          placeholder="Warsaw, Tokyo, New York..."
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-        />
-        <button
-          onClick={handleSearch}
-          disabled={loading}
-          className="text-xs uppercase tracking-widest text-zinc-900 hover:text-zinc-500 transition-colors disabled:opacity-30 pb-3"
-        >
-          Find
-        </button>
-      </div>
-
-      {/* Error */}
-      {error && (
-        <p className="text-red-400 text-sm mb-6">{error}</p>
-      )}
-
-      {/* Loading skeleton */}
-      {loading && (
-        <div className="flex flex-col gap-6">
-          <div className="animate-pulse">
-            <div className="h-16 bg-zinc-100 rounded w-1/4 mb-2" />
-            <div className="h-3 bg-zinc-100 rounded w-1/3" />
+        {/* Search */}
+        <div className="flex items-end gap-4 mb-16">
+          <div className="flex-1 relative">
+            <input
+              className="w-full border-b border-white/10 bg-transparent text-sm py-3 outline-none placeholder:text-white/20 text-white/70 focus:border-white/30 transition-colors pr-4"
+              maxLength={100}
+              placeholder="Warsaw, Tokyo, New York..."
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            />
           </div>
-          <div className="animate-pulse flex flex-col gap-2">
-            <div className="h-3 bg-zinc-100 rounded w-full" />
-            <div className="h-3 bg-zinc-100 rounded w-4/5" />
-            <div className="h-3 bg-zinc-100 rounded w-3/5" />
-          </div>
-          <div className="animate-pulse flex flex-col gap-4">
+          <button
+            onClick={handleSearch}
+            disabled={loading}
+            className="text-[10px] uppercase tracking-[0.3em] text-white/40 hover:text-white/80 transition-colors disabled:opacity-20 pb-3 shrink-0"
+          >
+            {loading ? "..." : "Search"}
+          </button>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <p className="text-[11px] text-red-400/70 uppercase tracking-[0.2em] mb-10">{error}</p>
+        )}
+
+        {/* Loading skeleton */}
+        {loading && (
+          <div className="flex flex-col gap-10 animate-pulse">
+            <div>
+              <div className="h-20 w-32 bg-white/5 mb-4" />
+              <div className="h-2 w-24 bg-white/5 mb-2" />
+              <div className="h-2 w-16 bg-white/5" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <div className="h-2 bg-white/5 w-full" />
+              <div className="h-2 bg-white/5 w-4/5" />
+              <div className="h-2 bg-white/5 w-3/5" />
+            </div>
             {[1, 2, 3].map((n) => (
-              <div key={n} className="border-b border-zinc-100 pb-4">
-                <div className="h-3 bg-zinc-100 rounded w-1/2 mb-2" />
-                <div className="h-3 bg-zinc-100 rounded w-1/4" />
+              <div key={n} className="border-b border-white/6 pb-5 flex justify-between">
+                <div className="flex flex-col gap-2">
+                  <div className="h-2 bg-white/5 w-36" />
+                  <div className="h-2 bg-white/5 w-16" />
+                </div>
+                <div className="h-2 bg-white/5 w-10" />
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Result */}
-      {result && !loading && (
-        <div className="flex flex-col gap-10">
+        {/* Result */}
+        {result && !loading && (
+          <div className="flex flex-col gap-14 animate-fade-in">
 
-          {/* Weather block */}
-          <div>
-            <p className="font-serif text-6xl font-light text-zinc-900 mb-2">
-              {result.weather.temp}°
-            </p>
-            <p className="text-xs uppercase tracking-widest text-zinc-400 mb-1">
-              {result.weather.city}
-            </p>
-            <p className="text-sm text-zinc-500 mb-3">{result.weather.condition}</p>
-            <span className="text-xs uppercase tracking-widest border border-zinc-200 px-3 py-1 inline-block text-zinc-600">
-              {categoryLabel[result.weather.category] ?? result.weather.category}
-            </span>
-          </div>
+            {/* Weather card */}
+            <div className="border border-white/6 p-8">
+              <div className="flex items-start justify-between mb-8">
+                <div>
+                  <p className="text-[9px] uppercase tracking-[0.4em] text-white/25 mb-3">
+                    {result.weather.city}
+                  </p>
+                  <p
+                    className="font-serif font-light text-white/90 leading-none"
+                    style={{ fontSize: "clamp(4rem, 14vw, 6rem)" }}
+                  >
+                    {result.weather.temp}°
+                  </p>
+                </div>
+                {meta && (
+                  <div className="text-right">
+                    <span className="text-3xl text-white/20">{meta.icon}</span>
+                    <p className="text-[9px] uppercase tracking-[0.3em] text-white/25 mt-2">{meta.label}</p>
+                  </div>
+                )}
+              </div>
+              <p className="text-sm text-white/35 font-light">{result.weather.condition}</p>
+            </div>
 
-          {/* AI message */}
-          <p className="italic text-zinc-600 border-l-2 border-zinc-200 pl-4 text-sm leading-relaxed">
-            {result.message}
-          </p>
+            {/* AI message */}
+            <div className="border-l border-white/10 pl-6">
+              <p className="text-[9px] uppercase tracking-[0.3em] text-white/20 mb-3">Stylist note</p>
+              <p className="text-sm text-white/45 font-light leading-loose italic">
+                {result.message}
+              </p>
+            </div>
 
-          {/* Products */}
-          <div>
+            {/* Products */}
             {result.products.length > 0 ? (
-              <div className="flex flex-col">
-                {result.products.map((p) => {
-                  const inCart = isInCart(p.id);
-                  return (
-                    <div
-                      key={p.id}
-                      className="border-b border-zinc-100 py-3 flex items-center justify-between gap-4 last:border-b-0"
-                    >
-                      <div>
-                        <div className="text-sm text-zinc-900">{p.name}</div>
-                        <div className="text-xs text-zinc-400 mt-0.5">{p.category}</div>
+              <div>
+                <p className="text-[9px] uppercase tracking-[0.35em] text-white/20 mb-6">
+                  Recommended for today
+                </p>
+                <div className="border-t border-white/6">
+                  {result.products.map((p) => {
+                    const inCart = isInCart(p.id);
+                    return (
+                      <div
+                        key={p.id}
+                        className="border-b border-white/6 py-5 flex items-center justify-between gap-4"
+                      >
+                        <div>
+                          <p className="text-sm text-white/70 font-light">{p.name}</p>
+                          <p className="text-[9px] uppercase tracking-[0.25em] text-white/25 mt-1">{p.category}</p>
+                        </div>
+                        <div className="flex items-center gap-5 shrink-0">
+                          <span className="text-sm text-white/35 tabular-nums">${p.price}</span>
+                          <button
+                            onClick={() => toggleItem(p.id)}
+                            className={`text-[10px] uppercase tracking-[0.2em] transition-colors ${
+                              inCart
+                                ? "text-white/25 hover:text-white/60"
+                                : "text-white/60 hover:text-white"
+                            }`}
+                          >
+                            {inCart ? "Remove" : "Add"}
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4 shrink-0">
-                        <span className="text-sm text-zinc-700">${p.price}</span>
-                        <button
-                          onClick={() => toggleItem(p.id)}
-                          className={`text-xs uppercase tracking-widest transition-colors ${
-                            inCart
-                              ? "text-zinc-400 hover:text-zinc-900"
-                              : "text-zinc-900 hover:text-zinc-400"
-                          }`}
-                        >
-                          {inCart ? "Remove" : "Add"}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             ) : (
-              <p className="text-sm text-zinc-400">No items found for this weather.</p>
+              <p className="text-[11px] uppercase tracking-[0.25em] text-white/20">
+                No items found for this weather.
+              </p>
             )}
-          </div>
 
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
