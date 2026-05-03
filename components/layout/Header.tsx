@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCart } from "@/lib/hooks/useCart";
+import { useCart } from "@/lib/context/cart-context";
 import TransitionLink from "@/components/ui/TransitionLink";
 import SearchOverlay from "@/components/ui/SearchOverlay";
 
@@ -18,7 +18,7 @@ const rightLinks = [
 
 export default function Header() {
   const pathname = usePathname();
-  const { items } = useCart();
+  const { itemCount } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -92,11 +92,9 @@ export default function Header() {
               Search
             </button>
 
-            {items.length > 0 && (
-              <TransitionLink href="/order" className={linkClass("/order")}>
-                Bag&nbsp;({items.length})
-              </TransitionLink>
-            )}
+            <TransitionLink href="/order" className={linkClass("/order")}>
+              Bag{itemCount > 0 && <>&nbsp;({itemCount})</>}
+            </TransitionLink>
           </nav>
 
           {/* Mobile: search + burger */}
@@ -115,9 +113,9 @@ export default function Header() {
               <span className={`block h-px bg-white/60 transition-all duration-300 origin-center ${menuOpen ? "w-5 rotate-45 translate-y-[7px]" : "w-5"}`} />
               <span className={`block h-px bg-white/60 transition-all duration-300 ${menuOpen ? "opacity-0 w-0" : "w-3.5"}`} />
               <span className={`block h-px bg-white/60 transition-all duration-300 origin-center ${menuOpen ? "w-5 -rotate-45 -translate-y-[7px]" : "w-5"}`} />
-              {items.length > 0 && !menuOpen && (
+              {itemCount > 0 && !menuOpen && (
                 <span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-white rounded-full flex items-center justify-center text-[7px] text-zinc-900 font-semibold leading-none">
-                  {items.length}
+                  {itemCount}
                 </span>
               )}
             </button>
@@ -159,13 +157,13 @@ export default function Header() {
           ))}
         </nav>
 
-        {items.length > 0 && (
+        {itemCount > 0 && (
           <TransitionLink
             href="/order"
             onClick={() => setMenuOpen(false)}
             className="mt-8 text-[10px] uppercase tracking-[0.25em] text-white/30 hover:text-white/70 transition-colors"
           >
-            Bag ({items.length})
+            Bag ({itemCount})
           </TransitionLink>
         )}
       </div>

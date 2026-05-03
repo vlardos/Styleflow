@@ -10,22 +10,41 @@ type Product = {
   price: number;
 };
 
+// Module-level cache: fetched once per browser session, reused on every open
+let _productsCache: Product[] | null = null;
+let _fetchPromise: Promise<Product[]> | null = null;
+
+function getProducts(): Promise<Product[]> {
+  if (_productsCache) return Promise.resolve(_productsCache);
+  if (_fetchPromise) return _fetchPromise;
+  _fetchPromise = fetch("/api/products")
+    .then((r) => r.json())
+    .then((data) => {
+      _productsCache = data.products ?? [];
+      _fetchPromise = null;
+      return _productsCache!;
+    })
+    .catch(() => {
+      _fetchPromise = null;
+      return [] as Product[];
+    });
+  return _fetchPromise;
+}
+
 type Props = {
   onClose: () => void;
 };
 
 export default function SearchOverlay({ onClose }: Props) {
   const [query, setQuery] = useState("");
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(_productsCache ?? []);
   const [visible, setVisible] = useState(false);
   const [closing, setClosing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetch("/api/products")
-      .then((r) => r.json())
-      .then((data) => setProducts(data.products ?? data))
-      .catch(() => {});
+    if (_productsCache) return; // already loaded
+    getProducts().then((list) => setProducts(list));
   }, []);
 
   // Fade-in on mount

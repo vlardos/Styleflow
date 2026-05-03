@@ -1,15 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCart } from "@/lib/hooks/useCart";
+import { useCart } from "@/lib/context/cart-context";
 import TransitionLink from "@/components/ui/TransitionLink";
-
-type Product = {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-};
 
 type Order = {
   orderId: string;
@@ -21,52 +14,40 @@ type Order = {
 
 export default function OrderPage() {
   const router = useRouter();
-  const { items: cartItems, hydrated, clearCart } = useCart();
+  const { cart, items, itemCount, subtotal, loading, clearCart, removeItem, updateQuantity } = useCart();
 
-  const [products, setProducts] = useState<Product[]>([]);
   const [customerName, setCustomerName] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (!hydrated || !cartItems.length) return;
-    fetch("/api/products")
-      .then((r) => r.json())
-      .then((data) => {
-        const all: Product[] = data.products ?? [];
-        // cartItems намеренно не в deps — замыкание захватывает актуальное значение,
-        // но эффект должен срабатывать только один раз после hydration
-        setProducts(all.filter((p) => cartItems.includes(p.id)));
-      })
-      .catch(() => setError("Could not load product details."));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hydrated]);
-
-  const total = products.reduce((sum, p) => sum + p.price, 0);
-
   async function submit() {
     if (!customerName.trim()) { setError("Please enter your name"); return; }
+    if (!items.length) return;
     setError("");
-    setLoading(true);
+    setSubmitting(true);
     try {
       const res = await fetch("/api/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: cartItems, customerName: customerName.trim() }),
+        body: JSON.stringify({
+          items: items.map((i) => i.productId),
+          customerName: customerName.trim(),
+        }),
       });
       const data = await res.json();
       if (!data.success) { setError(data.error ?? "Something went wrong"); return; }
       setOrder(data.order);
-      clearCart();
+      await clearCart();
     } catch {
       setError("Connection error. Please try again.");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   }
 
-  if (!hydrated) {
+  // Loading skeleton
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
         <div className="w-8 h-px bg-white/10 animate-pulse" />
@@ -74,7 +55,8 @@ export default function OrderPage() {
     );
   }
 
-  if (!cartItems.length) {
+  // Empty bag
+  if (!loading && itemCount === 0 && !order) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center gap-8">
         <p className="text-[9px] uppercase tracking-[0.4em] text-white/20">Your bag is empty</p>
@@ -88,6 +70,7 @@ export default function OrderPage() {
     );
   }
 
+  // Order confirmed
   if (order) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] text-white">
@@ -152,18 +135,52 @@ export default function OrderPage() {
 
         {/* Items */}
         <div className="border-t border-white/6 mb-14">
-          {products.map((p) => (
-            <div key={p.id} className="flex items-baseline justify-between py-6 border-b border-white/6">
-              <div>
-                <p className="text-sm text-white/70 font-light">{p.name}</p>
-                <p className="text-[9px] uppercase tracking-[0.25em] text-white/25 mt-1">{p.category}</p>
+          {items.map((item) => (
+            <div key={item.id} className="flex items-center justify-between py-6 border-b border-white/6 gap-4">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-white/70 font-light truncate">{item.product.name}</p>
+                <p className="text-[9px] uppercase tracking-[0.25em] text-white/25 mt-1">{item.product.category}</p>
               </div>
-              <p className="text-sm text-white/40 font-light tabular-nums">${p.price.toFixed(2)}</p>
+
+              {/* Quantity controls */}
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                  className="w-6 h-6 flex items-center justify-center text-white/30 hover:text-white/70 border border-white/10 hover:border-white/30 transition-colors text-xs"
+                >
+                  −
+                </button>
+                <span className="text-sm text-white/50 font-light tabular-nums w-4 text-center">
+                  {item.quantity}
+                </span>
+                <button
+                  onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                  className="w-6 h-6 flex items-center justify-center text-white/30 hover:text-white/70 border border-white/10 hover:border-white/30 transition-colors text-xs"
+                >
+                  +
+                </button>
+              </div>
+
+              <p className="text-sm text-white/40 font-light tabular-nums shrink-0 w-20 text-right">
+                ${(item.product.price * item.quantity).toFixed(2)}
+              </p>
+
+              {/* Remove */}
+              <button
+                onClick={() => removeItem(item.id)}
+                className="text-white/20 hover:text-white/60 transition-colors shrink-0"
+                aria-label="Remove item"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                  <path d="M2 2l8 8M10 2L2 10" />
+                </svg>
+              </button>
             </div>
           ))}
+
           <div className="flex justify-between py-6">
-            <span className="text-[9px] uppercase tracking-[0.3em] text-white/25">Total</span>
-            <span className="text-sm text-white/70 font-light tabular-nums">${total.toFixed(2)}</span>
+            <span className="text-[9px] uppercase tracking-[0.3em] text-white/25">Subtotal</span>
+            <span className="text-sm text-white/70 font-light tabular-nums">${subtotal.toFixed(2)}</span>
           </div>
         </div>
 
@@ -186,10 +203,10 @@ export default function OrderPage() {
         <div className="flex flex-col sm:flex-row gap-3 max-w-sm">
           <button
             onClick={submit}
-            disabled={loading}
+            disabled={submitting}
             className="flex-1 bg-white text-zinc-900 text-[10px] uppercase tracking-[0.25em] py-4 hover:bg-white/90 transition-colors disabled:opacity-40 font-medium"
           >
-            {loading ? "Placing order..." : "Place Order"}
+            {submitting ? "Placing order…" : "Place Order"}
           </button>
           <button
             onClick={() => router.push("/catalog")}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import TransitionLink from "@/components/ui/TransitionLink";
 import ProductImage from "@/components/ui/ProductImage";
 
@@ -17,10 +18,24 @@ export type ProductCardProduct = {
 type Props = {
   product: ProductCardProduct;
   inCart: boolean;
-  onToggle: (id: string) => void;
+  onToggle: (id: string) => Promise<void>;
 };
 
 export default function ProductCard({ product, inCart, onToggle }: Props) {
+  const [busy, setBusy] = useState(false);
+
+  async function handleToggle(e: React.MouseEvent) {
+    e.stopPropagation();
+    e.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    try {
+      await onToggle(product.id);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <TransitionLink href={`/catalog/${product.id}`} className="block group relative">
 
@@ -46,27 +61,30 @@ export default function ProductCard({ product, inCart, onToggle }: Props) {
 
         {/* Mobile: luxury strip CTA */}
         <button
-          onClick={(e) => { e.stopPropagation(); e.preventDefault(); onToggle(product.id); }}
-          className={`lg:hidden absolute bottom-0 left-0 right-0 h-11 flex items-center justify-center gap-2 transition-all duration-500 ${
+          onClick={handleToggle}
+          disabled={busy}
+          className={`lg:hidden absolute bottom-0 left-0 right-0 h-11 flex items-center justify-center gap-2 transition-all duration-500 disabled:opacity-50 ${
             inCart
               ? "bg-black/55 backdrop-blur-md border-t border-white/10"
               : "bg-white/92 backdrop-blur-sm"
           }`}
         >
-          {inCart ? (
-            <span className="text-[8px] uppercase tracking-[0.35em] text-white/55 animate-fade-in flex items-center gap-1.5">
-              <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                <polyline points="2,6 5,9 10,3"/>
+          {busy ? (
+            <span className="text-[8px] uppercase tracking-[0.35em] text-white/40">…</span>
+          ) : inCart ? (
+            <span className="text-[8px] uppercase tracking-[0.35em] text-white/55 flex items-center gap-1.5">
+              <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <path d="M2 2l6 6M8 2L2 8"/>
               </svg>
-              In Bag
+              Remove
             </span>
           ) : (
             <span className="text-[8px] uppercase tracking-[0.35em] text-zinc-800">Add to Bag</span>
           )}
         </button>
 
-        {/* Bottom info revealed on hover */}
-        <div className="absolute bottom-0 left-0 right-0 p-5 flex flex-col gap-3 translate-y-1 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 ease-out">
+        {/* Bottom info revealed on hover — desktop only */}
+        <div className="absolute bottom-0 left-0 right-0 p-5 flex flex-col gap-3 translate-y-1 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500 ease-out hidden lg:flex">
 
           {/* Tags row */}
           <div className="flex gap-1.5 flex-wrap">
@@ -77,16 +95,17 @@ export default function ProductCard({ product, inCart, onToggle }: Props) {
             ))}
           </div>
 
-          {/* Add to bag button */}
+          {/* Add / Remove button */}
           <button
-            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onToggle(product.id); }}
-            className={`w-full text-[10px] uppercase tracking-[0.25em] py-3 transition-all duration-300 ${
+            onClick={handleToggle}
+            disabled={busy}
+            className={`w-full text-[10px] uppercase tracking-[0.25em] py-3 transition-all duration-300 disabled:opacity-50 ${
               inCart
                 ? "bg-white/15 backdrop-blur-sm border border-white/30 text-white/70 hover:bg-white/5 hover:text-white/40"
                 : "bg-white text-zinc-900 hover:bg-white/90"
             }`}
           >
-            {inCart ? "Remove from Bag" : "Add to Bag"}
+            {busy ? "…" : inCart ? "Remove from Bag" : "Add to Bag"}
           </button>
         </div>
       </div>
@@ -109,6 +128,20 @@ export default function ProductCard({ product, inCart, onToggle }: Props) {
           {product.name}
           <span className="absolute bottom-0 left-0 w-full h-px bg-white/20 scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500 ease-out" />
         </p>
+
+        {/* Desktop: always-visible remove button below image when in cart */}
+        {inCart && (
+          <button
+            onClick={handleToggle}
+            disabled={busy}
+            className="hidden lg:flex items-center gap-1.5 mt-2.5 text-[8px] uppercase tracking-[0.25em] text-white/25 hover:text-white/70 transition-colors duration-300 disabled:opacity-40"
+          >
+            <svg width="8" height="8" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+              <path d="M2 2l6 6M8 2L2 8"/>
+            </svg>
+            {busy ? "…" : "Remove"}
+          </button>
+        )}
 
       </div>
     </TransitionLink>

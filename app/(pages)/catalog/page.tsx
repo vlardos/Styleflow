@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useCart } from "@/lib/hooks/useCart";
+import { useCart } from "@/lib/context/cart-context";
 import ProductCard, {
   type ProductCardProduct,
 } from "@/components/ui/ProductCard";
@@ -17,7 +17,7 @@ const SEASONS = ["spring", "summer", "autumn", "winter"];
 
 export default function CatalogPage() {
   const router = useRouter();
-  const { items: cart, toggleItem } = useCart();
+  const { isInCart, toggleItem, itemCount, subtotal } = useCart();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,15 +61,8 @@ export default function CatalogPage() {
   }, [products, search, category, style, season, sort]);
 
   function goToOrder() {
-    const params = new URLSearchParams();
-    cart.forEach((id) => params.append("items", id));
-    router.push(`/order?${params.toString()}`);
+    router.push("/order");
   }
-
-  const cartTotal = useMemo(
-    () => products.filter((p) => cart.includes(p.id)).reduce((sum, p) => sum + p.price, 0),
-    [products, cart]
-  );
 
   const filterBtnClass = (active: boolean) =>
     `px-4 py-1.5 text-[10px] uppercase tracking-[0.2em] border transition-all duration-200 ${
@@ -236,7 +229,7 @@ export default function CatalogPage() {
               <ProductCard
                 key={p.id}
                 product={p}
-                inCart={cart.includes(p.id)}
+                inCart={isInCart(p.id)}
                 onToggle={toggleItem}
               />
             ))}
@@ -244,25 +237,25 @@ export default function CatalogPage() {
         )}
 
         {/* Bottom padding for checkout bar + bottom nav */}
-        {cart.length > 0 && <div className="h-36 lg:h-24" />}
+        {itemCount > 0 && <div className="h-36 lg:h-24" />}
       </div>
 
       {/* Checkout bar */}
-      {cart.length > 0 && (
+      {itemCount > 0 && (
         <div className="fixed bottom-16 lg:bottom-0 left-0 right-0 z-50 border-t border-white/8 bg-[#0a0a0a]/95 backdrop-blur-md px-8 py-5 flex items-center justify-between">
           <div>
             <p className="text-[9px] uppercase tracking-[0.35em] text-white/30">
               Selected
             </p>
             <p className="text-sm font-light text-white/70 mt-0.5">
-              {cart.length} {cart.length === 1 ? "piece" : "pieces"}
+              {itemCount} {itemCount === 1 ? "piece" : "pieces"}
             </p>
           </div>
           <button
             onClick={goToOrder}
             className="bg-white text-zinc-900 text-[10px] uppercase tracking-[0.25em] px-10 py-3.5 hover:bg-white/90 transition-colors duration-200 font-medium"
           >
-            Checkout &middot; ${cartTotal.toFixed(2)}
+            Checkout &middot; ${subtotal.toFixed(2)}
           </button>
         </div>
       )}

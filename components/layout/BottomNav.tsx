@@ -1,11 +1,11 @@
 "use client";
 import { usePathname } from "next/navigation";
-import { useCart } from "@/lib/hooks/useCart";
+import { useCart } from "@/lib/context/cart-context";
 import TransitionLink from "@/components/ui/TransitionLink";
 
 export default function BottomNav() {
   const pathname = usePathname();
-  const { items } = useCart();
+  const { itemCount } = useCart();
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -72,9 +72,9 @@ export default function BottomNav() {
             <line x1="3" y1="6" x2="21" y2="6"/>
             <path d="M16 10a4 4 0 01-8 0"/>
           </svg>
-          {items.length > 0 && (
+          {itemCount > 0 && (
             <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-0.5 bg-white rounded-full flex items-center justify-center text-[8px] text-zinc-900 font-semibold leading-none">
-              {items.length}
+              {itemCount}
             </span>
           )}
         </div>

@@ -1,16 +1,17 @@
 "use client";
 import { usePageTransition } from "@/lib/transition-context";
 import { usePathname } from "next/navigation";
-import { ReactNode, MouseEvent } from "react";
+import { CSSProperties, ReactNode, MouseEvent } from "react";
 
 type Props = {
   href: string;
   children: ReactNode;
   className?: string;
   onClick?: () => void;
+  style?: CSSProperties;
 };
 
-export default function TransitionLink({ href, children, className, onClick }: Props) {
+export default function TransitionLink({ href, children, className, onClick, style }: Props) {
   const { trigger } = usePageTransition();
   const pathname = usePathname();
 
@@ -25,7 +26,7 @@ export default function TransitionLink({ href, children, className, onClick }: P
   }
 
   return (
-    <a href={href} onClick={handleClick} className={className}>
+    <a href={href} onClick={handleClick} className={className} style={style}>
       {children}
     </a>
   );

@@ -1,10 +1,10 @@
-# 🤖 Агенты проекта
+#  Агенты проекта
 
 Здесь описаны роли агентов для AI Fashion Store.
 
 ---
 
-## 🧱 1. Architect Agent
+##  1. Architect Agent
 
 **Роль:** Архитектор / техлид
 
@@ -31,7 +31,7 @@
 
 ---
 
-## ⚙️ 2. Backend Agent
+## 2. Backend Agent
 
 **Роль:** Backend разработчик
 
@@ -85,7 +85,7 @@
 
 ---
 
-## 🧪 4. Code Review Agent
+##  4. Code Review Agent
 
 **Роль:** Code reviewer
 
@@ -131,7 +131,7 @@
 
 ---
 
-## 🐛 5. Debug Agent
+##  5. Debug Agent
 
 **Роль:** Дебаггер
 
@@ -157,7 +157,7 @@
 
 ---
 
-## 🧾 6. Docs Agent
+## 6. Docs Agent
 
 **Роль:** Документация / презентация
 
@@ -184,7 +184,7 @@
 
 ---
 
-## 🧭 Как выбирать агента
+##  Как выбирать агента
 
 * архитектура → Architect Agent
 * код / API → Backend Agent
@@ -195,7 +195,7 @@
 
 ---
 
-## 🧠 Общий workflow
+##  Общий workflow
 
 1. Architect → план
 2. Backend → реализация

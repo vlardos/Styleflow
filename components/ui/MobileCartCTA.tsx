@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useCart } from "@/lib/hooks/useCart";
+import { useCart } from "@/lib/context/cart-context";
 
 type Props = {
   productId: string;
@@ -12,12 +12,19 @@ export default function MobileCartCTA({ productId, price }: Props) {
   const { isInCart, toggleItem } = useCart();
   const inCart = isInCart(productId);
   const [flash, setFlash] = useState(false);
+  const [busy, setBusy] = useState(false);
 
-  function handleAdd() {
-    toggleItem(productId);
-    if (!inCart) {
-      setFlash(true);
-      setTimeout(() => setFlash(false), 700);
+  async function handleToggle() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await toggleItem(productId);
+      if (!inCart) {
+        setFlash(true);
+        setTimeout(() => setFlash(false), 700);
+      }
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -36,17 +43,18 @@ export default function MobileCartCTA({ productId, price }: Props) {
 
         {/* Button */}
         <button
-          onClick={handleAdd}
-          className={`flex-1 relative overflow-hidden flex items-center justify-center gap-2.5 py-5 px-6 transition-all duration-500 ${
-            inCart ? "active:scale-[0.98]" : "active:scale-[0.98]"
-          }`}
+          onClick={handleToggle}
+          disabled={busy}
+          className="flex-1 relative overflow-hidden flex items-center justify-center gap-2.5 py-5 px-6 transition-all duration-500 active:scale-[0.98] disabled:opacity-50"
         >
           {/* Flash shimmer overlay */}
           {flash && (
             <span className="absolute inset-0 bg-white/5 animate-fade-in" />
           )}
 
-          {inCart ? (
+          {busy ? (
+            <span className="text-[10px] uppercase tracking-[0.3em] text-white/30">…</span>
+          ) : inCart ? (
             <span className="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-white/40 hover:text-white/60 transition-colors">
               <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
                 <polyline points="2,7 6,11 12,3"/>
@@ -59,8 +67,8 @@ export default function MobileCartCTA({ productId, price }: Props) {
             </span>
           )}
 
-          {/* Active state indicator — thin white top border on hover */}
-          {!inCart && (
+          {/* Active state indicator */}
+          {!inCart && !busy && (
             <span className="absolute top-0 left-6 right-6 h-px bg-white/10" />
           )}
         </button>

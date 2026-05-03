@@ -1,9 +1,11 @@
+import {
+  getProductByIdFromDb,
+  getRelatedProductsFromDb,
+} from "@/lib/services/product.service";
 import TransitionLink from "@/components/ui/TransitionLink";
 import ProductImage from "@/components/ui/ProductImage";
 import AddToCartButton from "@/components/ui/AddToCartButton";
 import MobileCartCTA from "@/components/ui/MobileCartCTA";
-import { getProductById, getRelatedProducts } from "@/lib/services/product.service";
-import type { Product } from "@/lib/services/product.service";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -11,7 +13,11 @@ type Props = {
 
 export default async function ProductDetailPage({ params }: Props) {
   const { id } = await params;
-  const product = getProductById(id) ?? null;
+
+  const [product, related] = await Promise.all([
+    getProductByIdFromDb(id),
+    getRelatedProductsFromDb(id),
+  ]);
 
   if (!product) {
     return (
@@ -28,8 +34,6 @@ export default async function ProductDetailPage({ params }: Props) {
       </div>
     );
   }
-
-  const related = getRelatedProducts(id);
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white pb-24 lg:pb-0">
@@ -133,7 +137,7 @@ export default async function ProductDetailPage({ params }: Props) {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-12">
-              {related.map((item: Product) => (
+              {related.map((item) => (
                 <TransitionLink
                   key={item.id}
                   href={`/catalog/${item.id}`}

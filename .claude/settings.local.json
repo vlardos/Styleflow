@@ -5,7 +5,16 @@
       "Bash(npx tsc *)",
       "Bash(wait)",
       "WebSearch",
-      "WebFetch(domain:unsplash.com)"
+      "WebFetch(domain:unsplash.com)",
+      "Bash(cmd *)",
+      "Bash(npx prisma *)",
+      "Bash(node *)",
+      "Bash(npx tsx *)",
+      "Bash(grep -l \"Cart\\\\|CartItem\" D:/claudecode/Project-1/lib/generated/prisma/*.ts)",
+      "Bash(grep -l \"Cart\" D:/claudecode/Project-1/lib/generated/prisma/*.ts D:/claudecode/Project-1/lib/generated/prisma/*.js)",
+      "Bash(taskkill /PID 15564 /F)",
+      "Bash(netstat -ano)",
+      "Bash(powershell -Command \"Stop-Process -Id 15564 -Force\")"
     ]
   }
 }
